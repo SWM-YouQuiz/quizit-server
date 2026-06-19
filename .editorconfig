@@ -15,5 +15,5 @@ ktlint_standard_filename = disabled
 ktlint_standard_chain-method-continuation = disabled
 ktlint_standard_no-wildcard-imports = disabled
 
-[core/build/generated/**/*.kt]
-ktlint_standard_property-naming = disabled
+[**/generated/**.{kt,kts}]
+ktlint = disabled
