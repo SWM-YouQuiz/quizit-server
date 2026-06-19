@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: quizit-api
+  main:
+    banner-mode: off
+  profiles:
+    include:
+      - auth
+      - db
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+management:
+  server:
+    port: 8081
+  endpoints:
+    access:
+      default: none
+    web:
+      exposure:
+        include: health
+    jmx:
+      exposure:
+        exclude: '*'
+  endpoint:
+    health:
+      access: read_only
+      probes:
+        enabled: true
+        add-additional-paths: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  web:
+    resources:
+      add-mappings: false
