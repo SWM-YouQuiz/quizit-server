@@ -1,0 +1,37 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: quizit-mysql
+    restart: unless-stopped
+    ports:
+    - "3306:3306"
+    environment:
+      MYSQL_DATABASE: quizit
+      MYSQL_ROOT_PASSWORD: root
+      TZ: UTC
+    command:
+    - --default-time-zone=+00:00
+    volumes:
+    - mysql:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-proot" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    container_name: quizit-redis
+    restart: unless-stopped
+    ports:
+    - "6379:6379"
+    command: redis-server --port 6379 --requirepass root
+    volumes:
+    - redis:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "root", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  mysql:
+  redis:
