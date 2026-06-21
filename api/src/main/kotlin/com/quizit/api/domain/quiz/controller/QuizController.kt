@@ -1,6 +1,7 @@
 package com.quizit.api.domain.quiz.controller
 
 import com.quizit.api.domain.quiz.dto.request.GradeQuizRequest
+import com.quizit.api.domain.quiz.dto.request.ReactQuizRequest
 import com.quizit.api.domain.quiz.dto.response.GetQuizResponse
 import com.quizit.api.domain.quiz.dto.response.GradeQuizResponse
 import com.quizit.api.global.annotation.AuthenticationId
@@ -29,6 +30,21 @@ class QuizController(
         quizService.markQuiz(
             userId = userId,
             command = MarkQuizCommand(quizId = quizId)
+        )
+    }
+
+    @PostMapping("/users/me/quizzes/{quiz_id}/reactions")
+    fun reactQuiz(
+        @AuthenticationId
+        userId: UUID,
+        @PathVariable("quiz_id")
+        quizId: UUID,
+        @RequestBody
+        request: ReactQuizRequest
+    ) {
+        quizService.reactQuiz(
+            userId = userId,
+            command = request.toCommand(quizId)
         )
     }
 

@@ -7,6 +7,7 @@ import com.quizit.api.extension.expectStatus
 import com.quizit.api.fixture.createGetQuizResponses
 import com.quizit.api.fixture.createGradeQuizRequest
 import com.quizit.api.fixture.createGradeQuizResponse
+import com.quizit.api.fixture.createReactQuizRequest
 import com.quizit.core.domain.quiz.service.QuizService
 import com.quizit.core.fixture.*
 import io.mockk.every
@@ -36,6 +37,26 @@ class QuizControllerTest : ControllerTest() {
 
                 verify(exactly = 1) {
                     quizService.markQuiz(userId = USER_ID, command = createMarkQuizCommand())
+                }
+            }
+        }
+
+        describe("reactQuiz()는") {
+            it("퀴즈 반응을 요청한다.") {
+                every {
+                    quizService.reactQuiz(userId = USER_ID, command = createReactQuizCommand())
+                } just runs
+                authenticate(USER_ID)
+
+                webClient
+                    .post()
+                    .uri("/users/me/quizzes/{quiz_id}/reactions", QUIZ_ID)
+                    .bodyValue(createReactQuizRequest())
+                    .exchange()
+                    .expectStatus(200)
+
+                verify(exactly = 1) {
+                    quizService.reactQuiz(userId = USER_ID, command = createReactQuizCommand())
                 }
             }
         }

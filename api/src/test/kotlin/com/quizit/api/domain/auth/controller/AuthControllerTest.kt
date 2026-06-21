@@ -9,6 +9,7 @@ import com.quizit.api.fixture.createLoginRequest
 import com.quizit.api.fixture.createLoginResponse
 import com.quizit.api.fixture.createRefreshRequest
 import com.quizit.api.fixture.createRefreshResponse
+import com.quizit.api.global.config.SecurityConfiguration
 import com.quizit.core.domain.auth.dto.command.RefreshCommand
 import com.quizit.core.domain.auth.service.AuthService
 import com.quizit.core.fixture.OAUTH_TOKEN
@@ -16,16 +17,22 @@ import com.quizit.core.fixture.REFRESH_TOKEN_CONTENT
 import com.quizit.core.fixture.USER_ID
 import com.quizit.core.fixture.createLoginResult
 import com.quizit.core.fixture.createRefreshResult
+import com.quizit.core.global.jwt.JwtProvider
 import io.mockk.every
 import io.mockk.just
 import io.mockk.runs
 import io.mockk.verify
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.context.annotation.Import
 
 @WebMvcTest(AuthController::class)
+@Import(SecurityConfiguration::class)
 class AuthControllerTest : ControllerTest() {
     @MockkBean
     private lateinit var authService: AuthService
+
+    @MockkBean
+    private lateinit var jwtProvider: JwtProvider
 
     init {
         describe("login()은") {
