@@ -4,6 +4,7 @@ import com.quizit.api.domain.quiz.dto.request.GradeQuizRequest
 import com.quizit.api.domain.quiz.dto.response.GetQuizResponse
 import com.quizit.api.domain.quiz.dto.response.GradeQuizResponse
 import com.quizit.api.global.annotation.AuthenticationId
+import com.quizit.core.domain.quiz.dto.command.MarkQuizCommand
 import com.quizit.core.domain.quiz.service.QuizService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -18,6 +19,19 @@ import java.util.*
 class QuizController(
     private val quizService: QuizService
 ) {
+    @PostMapping("/users/me/quizzes/{quiz_id}/bookmarks")
+    fun markQuiz(
+        @AuthenticationId
+        userId: UUID,
+        @PathVariable("quiz_id")
+        quizId: UUID
+    ) {
+        quizService.markQuiz(
+            userId = userId,
+            command = MarkQuizCommand(quizId = quizId)
+        )
+    }
+
     @PostMapping("/users/me/quizzes/{quiz_id}/grade")
     fun gradeQuiz(
         @AuthenticationId

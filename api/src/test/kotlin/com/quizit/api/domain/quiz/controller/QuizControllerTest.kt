@@ -10,6 +10,9 @@ import com.quizit.api.fixture.createGradeQuizResponse
 import com.quizit.core.domain.quiz.service.QuizService
 import com.quizit.core.fixture.*
 import io.mockk.every
+import io.mockk.just
+import io.mockk.runs
+import io.mockk.verify
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 
 @WebMvcTest(QuizController::class)
@@ -18,6 +21,25 @@ class QuizControllerTest : ControllerTest() {
     private lateinit var quizService: QuizService
 
     init {
+        describe("markQuiz()는") {
+            it("북마크 토글을 요청한다.") {
+                every {
+                    quizService.markQuiz(userId = USER_ID, command = createMarkQuizCommand())
+                } just runs
+                authenticate(USER_ID)
+
+                webClient
+                    .post()
+                    .uri("/users/me/quizzes/{quiz_id}/bookmarks", QUIZ_ID)
+                    .exchange()
+                    .expectStatus(200)
+
+                verify(exactly = 1) {
+                    quizService.markQuiz(userId = USER_ID, command = createMarkQuizCommand())
+                }
+            }
+        }
+
         describe("gradeQuiz()는") {
             it("채점 결과를 반환한다.") {
                 every {
