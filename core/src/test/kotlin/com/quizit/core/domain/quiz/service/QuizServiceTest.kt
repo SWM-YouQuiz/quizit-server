@@ -1,7 +1,10 @@
 package com.quizit.core.domain.quiz.service
 
+import com.quizit.core.domain.quiz.exception.QuizOptionNotFoundException
 import com.quizit.core.domain.quiz.repository.QuizOptionRepository
 import com.quizit.core.domain.quiz.repository.QuizRepository
+import com.quizit.core.domain.user.entity.UserSolvedQuiz
+import com.quizit.core.domain.user.repository.UserSolvedQuizRepository
 import com.quizit.core.fixture.QUIZ_CHAPTER_ID
 import com.quizit.core.fixture.QUIZ_ID
 import com.quizit.core.fixture.QUIZ_OPTION_ID
@@ -10,26 +13,33 @@ import com.quizit.core.fixture.QUIZ_SOLUTION
 import com.quizit.core.fixture.SOLVED_QUIZ_FILTER
 import com.quizit.core.fixture.USER_ID
 import com.quizit.core.fixture.createGetSolvedQuizzesQuery
+import com.quizit.core.fixture.createGradeQuizCommand
+import com.quizit.core.fixture.createQuiz
 import com.quizit.core.fixture.createQuizDetailProjections
 import com.quizit.core.fixture.createQuizOptions
 import com.quizit.core.fixture.createSolvedQuizDetailProjections
 import com.quizit.core.fixture.createUnsolvedQuizDetailProjections
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
+import java.util.Optional
 
 class QuizServiceTest : BehaviorSpec() {
     override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
 
     private val quizRepository = mockk<QuizRepository>()
     private val quizOptionRepository = mockk<QuizOptionRepository>()
+    private val userSolvedQuizRepository = mockk<UserSolvedQuizRepository>()
     private val quizService =
         QuizService(
             quizRepository = quizRepository,
-            quizOptionRepository = quizOptionRepository
+            quizOptionRepository = quizOptionRepository,
+            userSolvedQuizRepository = userSolvedQuizRepository
         )
 
     init {
@@ -89,6 +99,69 @@ class QuizServiceTest : BehaviorSpec() {
                     results.first().id shouldBe QUIZ_ID
                     results.first().isCorrect shouldBe SOLVED_QUIZ_FILTER
                     results.first().options.first().isAnswer shouldBe SOLVED_QUIZ_FILTER
+                }
+            }
+        }
+
+        given("gradeQuiz()는") {
+            `when`("처음 푸는 퀴즈이면") {
+                every { quizRepository.findById(QUIZ_ID) } returns Optional.of(createQuiz())
+                every { quizOptionRepository.findByIdAndQuizId(QUIZ_OPTION_ID, QUIZ_ID) } returns
+                    createQuizOptions().first()
+                every { userSolvedQuizRepository.existsByUserIdAndQuizId(USER_ID, QUIZ_ID) } returns false
+                every { userSolvedQuizRepository.save(any()) } answers { firstArg() }
+
+                then("풀이 이력을 저장하고 채점 결과를 반환한다.") {
+                    val result =
+                        quizService.gradeQuiz(
+                            userId = USER_ID,
+                            command = createGradeQuizCommand()
+                        )
+
+                    result.isCorrect shouldBe true
+                    result.solution shouldBe QUIZ_SOLUTION
+                    verify(exactly = 1) {
+                        userSolvedQuizRepository.save(
+                            match<UserSolvedQuiz> {
+                                it.userId == USER_ID &&
+                                    it.quizId == QUIZ_ID &&
+                                    it.selectedOptionId == QUIZ_OPTION_ID &&
+                                    it.isCorrect
+                            }
+                        )
+                    }
+                }
+            }
+
+            `when`("이미 푼 퀴즈이면") {
+                every { quizRepository.findById(QUIZ_ID) } returns Optional.of(createQuiz())
+                every { quizOptionRepository.findByIdAndQuizId(QUIZ_OPTION_ID, QUIZ_ID) } returns
+                    createQuizOptions().first()
+                every { userSolvedQuizRepository.existsByUserIdAndQuizId(USER_ID, QUIZ_ID) } returns true
+
+                then("풀이 이력을 새로 저장하지 않는다.") {
+                    val result =
+                        quizService.gradeQuiz(
+                            userId = USER_ID,
+                            command = createGradeQuizCommand()
+                        )
+
+                    result.solution shouldBe QUIZ_SOLUTION
+                    verify(exactly = 0) { userSolvedQuizRepository.save(any()) }
+                }
+            }
+
+            `when`("선택지가 퀴즈에 속하지 않으면") {
+                every { quizRepository.findById(QUIZ_ID) } returns Optional.of(createQuiz())
+                every { quizOptionRepository.findByIdAndQuizId(QUIZ_OPTION_ID, QUIZ_ID) } returns null
+
+                then("예외를 던진다.") {
+                    shouldThrow<QuizOptionNotFoundException> {
+                        quizService.gradeQuiz(
+                            userId = USER_ID,
+                            command = createGradeQuizCommand()
+                        )
+                    }
                 }
             }
         }

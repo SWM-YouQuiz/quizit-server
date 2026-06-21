@@ -1,7 +1,9 @@
 package com.quizit.api.fixture
 
+import com.quizit.api.domain.quiz.dto.request.GradeQuizRequest
 import com.quizit.api.domain.quiz.dto.response.GetQuizResponse
 import com.quizit.api.domain.quiz.dto.response.GetSolvedQuizResponse
+import com.quizit.api.domain.quiz.dto.response.GradeQuizResponse
 import com.quizit.core.fixture.QUIZ_CHAPTER_ID
 import com.quizit.core.fixture.QUIZ_ID
 import com.quizit.core.fixture.QUIZ_OPTIONS
@@ -41,3 +43,15 @@ fun createGetQuizResponse(
 fun createGetQuizResponses(): List<GetQuizResponse> = listOf(createGetQuizResponse())
 
 fun createGetSolvedQuizResponses(): List<GetSolvedQuizResponse> = emptyList()
+
+fun createGradeQuizRequest(selectedOptionId: UUID = QUIZ_OPTION_ID): GradeQuizRequest =
+    GradeQuizRequest(selectedOptionId = selectedOptionId)
+
+fun createGradeQuizResponse(
+    isCorrect: Boolean = true,
+    solution: String = QUIZ_SOLUTION
+): GradeQuizResponse =
+    GradeQuizResponse(
+        isCorrect = isCorrect,
+        solution = solution
+    )
