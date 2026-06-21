@@ -1,6 +1,8 @@
 package com.quizit.core.fixture
 
 import com.quizit.core.domain.quiz.dto.command.GradeQuizCommand
+import com.quizit.core.domain.quiz.dto.command.MarkQuizCommand
+import com.quizit.core.domain.quiz.dto.command.ReactQuizCommand
 import com.quizit.core.domain.quiz.dto.projection.QuizDetailProjection
 import com.quizit.core.domain.quiz.dto.projection.SolvedQuizDetailProjection
 import com.quizit.core.domain.quiz.dto.query.GetSolvedQuizzesQuery
@@ -9,6 +11,8 @@ import com.quizit.core.domain.quiz.dto.result.GetSolvedQuizResult
 import com.quizit.core.domain.quiz.dto.result.GradeQuizResult
 import com.quizit.core.domain.quiz.entity.Quiz
 import com.quizit.core.domain.quiz.entity.QuizOption
+import com.quizit.core.domain.quiz.entity.QuizReaction
+import com.quizit.core.domain.quiz.entity.ReactionType
 import java.util.*
 
 val QUIZ_ID: UUID = UUID.fromString("0198fb75-7cc9-7d43-b7cc-f05d161d5c42")
@@ -24,6 +28,8 @@ const val QUIZ_OTHER_INCORRECT_COUNT: Long = 1L
 const val QUIZ_DETAIL_RESULT_SIZE: Int = 1
 const val SOLVED_QUIZ_FILTER: Boolean = true
 const val INCORRECT_QUIZ_FILTER: Boolean = false
+val INITIAL_REACTION_TYPE: ReactionType = ReactionType.LIKE
+val UPDATED_REACTION_TYPE: ReactionType = ReactionType.DISLIKE
 
 fun createQuiz(
     id: UUID? = QUIZ_ID,
@@ -86,6 +92,17 @@ fun createGradeQuizCommand(
         selectedOptionId = selectedOptionId
     )
 
+fun createMarkQuizCommand(quizId: UUID = QUIZ_ID): MarkQuizCommand = MarkQuizCommand(quizId = quizId)
+
+fun createReactQuizCommand(
+    quizId: UUID = QUIZ_ID,
+    reactionType: ReactionType = UPDATED_REACTION_TYPE
+): ReactQuizCommand =
+    ReactQuizCommand(
+        quizId = quizId,
+        reactionType = reactionType
+    )
+
 fun createGetSolvedQuizzesQuery(isCorrect: Boolean? = SOLVED_QUIZ_FILTER): GetSolvedQuizzesQuery =
     GetSolvedQuizzesQuery(isCorrect = isCorrect)
 
@@ -103,6 +120,17 @@ fun createQuizOption(
     )
 
 fun createQuizOptions(): List<QuizOption> = listOf(createQuizOption())
+
+fun createQuizReaction(
+    quizId: UUID = QUIZ_ID,
+    userId: UUID = USER_ID,
+    reactionType: ReactionType = INITIAL_REACTION_TYPE
+): QuizReaction =
+    QuizReaction(
+        quizId = quizId,
+        userId = userId,
+        reactionType = reactionType
+    )
 
 fun createQuizDetailProjection(
     id: UUID = QUIZ_ID,

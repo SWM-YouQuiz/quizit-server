@@ -1,7 +1,10 @@
 package com.quizit.core.domain.quiz.service
 
+import com.quizit.core.domain.quiz.exception.QuizNotFoundException
 import com.quizit.core.domain.quiz.exception.QuizOptionNotFoundException
+import com.quizit.core.domain.quiz.repository.QuizBookmarkRepository
 import com.quizit.core.domain.quiz.repository.QuizOptionRepository
+import com.quizit.core.domain.quiz.repository.QuizReactionRepository
 import com.quizit.core.domain.quiz.repository.QuizRepository
 import com.quizit.core.domain.user.entity.UserSolvedQuiz
 import com.quizit.core.domain.user.repository.UserSolvedQuizRepository
@@ -11,12 +14,16 @@ import com.quizit.core.fixture.QUIZ_OPTION_ID
 import com.quizit.core.fixture.QUIZ_RESULT_SIZE
 import com.quizit.core.fixture.QUIZ_SOLUTION
 import com.quizit.core.fixture.SOLVED_QUIZ_FILTER
+import com.quizit.core.fixture.UPDATED_REACTION_TYPE
 import com.quizit.core.fixture.USER_ID
 import com.quizit.core.fixture.createGetSolvedQuizzesQuery
 import com.quizit.core.fixture.createGradeQuizCommand
+import com.quizit.core.fixture.createMarkQuizCommand
 import com.quizit.core.fixture.createQuiz
 import com.quizit.core.fixture.createQuizDetailProjections
 import com.quizit.core.fixture.createQuizOptions
+import com.quizit.core.fixture.createQuizReaction
+import com.quizit.core.fixture.createReactQuizCommand
 import com.quizit.core.fixture.createSolvedQuizDetailProjections
 import com.quizit.core.fixture.createUnsolvedQuizDetailProjections
 import io.kotest.assertions.throwables.shouldThrow
@@ -25,7 +32,9 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import java.util.Optional
 
@@ -33,11 +42,15 @@ class QuizServiceTest : BehaviorSpec() {
     override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
 
     private val quizRepository = mockk<QuizRepository>()
+    private val quizBookmarkRepository = mockk<QuizBookmarkRepository>()
+    private val quizReactionRepository = mockk<QuizReactionRepository>()
     private val quizOptionRepository = mockk<QuizOptionRepository>()
     private val userSolvedQuizRepository = mockk<UserSolvedQuizRepository>()
     private val quizService =
         QuizService(
             quizRepository = quizRepository,
+            quizBookmarkRepository = quizBookmarkRepository,
+            quizReactionRepository = quizReactionRepository,
             quizOptionRepository = quizOptionRepository,
             userSolvedQuizRepository = userSolvedQuizRepository
         )
@@ -99,6 +112,58 @@ class QuizServiceTest : BehaviorSpec() {
                     results.first().id shouldBe QUIZ_ID
                     results.first().isCorrect shouldBe SOLVED_QUIZ_FILTER
                     results.first().options.first().isAnswer shouldBe SOLVED_QUIZ_FILTER
+                }
+            }
+        }
+
+        given("markQuiz()는") {
+            `when`("북마크가 없으면") {
+                every { quizRepository.existsById(QUIZ_ID) } returns true
+                every { quizBookmarkRepository.existsByQuizIdAndUserId(QUIZ_ID, USER_ID) } returns false
+                every { quizBookmarkRepository.save(any()) } answers { firstArg() }
+
+                then("북마크를 저장한다.") {
+                    quizService.markQuiz(USER_ID, createMarkQuizCommand())
+
+                    verify(exactly = 1) { quizBookmarkRepository.save(any()) }
+                }
+            }
+
+            `when`("북마크가 있으면") {
+                every { quizRepository.existsById(QUIZ_ID) } returns true
+                every { quizBookmarkRepository.existsByQuizIdAndUserId(QUIZ_ID, USER_ID) } returns true
+                every { quizBookmarkRepository.deleteByQuizIdAndUserId(QUIZ_ID, USER_ID) } just runs
+
+                then("북마크를 삭제한다.") {
+                    quizService.markQuiz(USER_ID, createMarkQuizCommand())
+
+                    verify(exactly = 1) { quizBookmarkRepository.deleteByQuizIdAndUserId(QUIZ_ID, USER_ID) }
+                }
+            }
+
+            `when`("퀴즈가 없으면") {
+                every { quizRepository.existsById(QUIZ_ID) } returns false
+
+                then("예외를 던진다.") {
+                    shouldThrow<QuizNotFoundException> {
+                        quizService.markQuiz(USER_ID, createMarkQuizCommand())
+                    }
+                }
+            }
+        }
+
+        given("reactQuiz()는") {
+            `when`("기존 반응이 있으면") {
+                val reaction = createQuizReaction()
+                every { quizRepository.existsById(QUIZ_ID) } returns true
+                every { quizReactionRepository.findByQuizIdAndUserId(QUIZ_ID, USER_ID) } returns reaction
+                every { quizReactionRepository.save(any()) } answers { firstArg() }
+
+                then("반응을 수정한다.") {
+                    quizService.reactQuiz(USER_ID, createReactQuizCommand())
+
+                    reaction.reactionType shouldBe UPDATED_REACTION_TYPE
+                    verify(exactly = 1) { quizReactionRepository.save(reaction) }
                 }
             }
         }
