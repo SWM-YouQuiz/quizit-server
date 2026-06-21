@@ -33,6 +33,10 @@ tasks {
     compileKotlin {
         dependsOn(jooqCodegen)
     }
+
+    matching { it.name.startsWith("runKtlint") }.configureEach {
+        mustRunAfter(jooqCodegen)
+    }
 }
 
 sourceSets {
