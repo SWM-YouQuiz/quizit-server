@@ -1,5 +1,6 @@
 import extension.exclude
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jlleitschuh.gradle.ktlint.KtlintExtension
 
 plugins {
     alias(libs.plugins.java.library)
@@ -52,6 +53,12 @@ subprojects {
     configurations {
         all {
             exclude(rootProject.libs.spring.logging)
+        }
+    }
+
+    configure<KtlintExtension> {
+        filter {
+            exclude { it.file.path.contains("/generated/") }
         }
     }
 
