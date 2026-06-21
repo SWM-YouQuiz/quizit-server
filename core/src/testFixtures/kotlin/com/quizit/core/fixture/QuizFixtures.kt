@@ -1,10 +1,12 @@
 package com.quizit.core.fixture
 
+import com.quizit.core.domain.quiz.dto.command.GradeQuizCommand
 import com.quizit.core.domain.quiz.dto.projection.QuizDetailProjection
 import com.quizit.core.domain.quiz.dto.projection.SolvedQuizDetailProjection
 import com.quizit.core.domain.quiz.dto.query.GetSolvedQuizzesQuery
 import com.quizit.core.domain.quiz.dto.result.GetQuizResult
 import com.quizit.core.domain.quiz.dto.result.GetSolvedQuizResult
+import com.quizit.core.domain.quiz.dto.result.GradeQuizResult
 import com.quizit.core.domain.quiz.entity.Quiz
 import com.quizit.core.domain.quiz.entity.QuizOption
 import java.util.*
@@ -64,6 +66,24 @@ fun createGetQuizResult(
         incorrectCount = incorrectCount,
         selectedOptionId = selectedOptionId,
         isCorrect = isCorrect
+    )
+
+fun createGradeQuizResult(
+    isCorrect: Boolean = true,
+    solution: String = QUIZ_SOLUTION
+): GradeQuizResult =
+    GradeQuizResult(
+        isCorrect = isCorrect,
+        solution = solution
+    )
+
+fun createGradeQuizCommand(
+    quizId: UUID = QUIZ_ID,
+    selectedOptionId: UUID = QUIZ_OPTION_ID
+): GradeQuizCommand =
+    GradeQuizCommand(
+        quizId = quizId,
+        selectedOptionId = selectedOptionId
     )
 
 fun createGetSolvedQuizzesQuery(isCorrect: Boolean? = SOLVED_QUIZ_FILTER): GetSolvedQuizzesQuery =
